@@ -5,35 +5,35 @@ jobs:
   run-service:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: 下载代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: 安装依赖
         run: pip install flask
 
-      - name: 安装调试工具
-        run: sudo apt update && sudo apt install -y netcat
-
       - name: 后台启动 Flask 服务（带日志）
         run: |
-          python web_chat.py > server.log 2>&1 &
+          python app.py > server.log 2>&1 &
           echo $! > server.pid
           echo "服务进程ID: $(cat server.pid)"
 
-      - name: 循环等待端口开启（最多30秒）
+      - name: 循环等待端口开启（最多30秒，无额外依赖）
         run: |
           for i in {1..30}; do
             echo "第 $i 次检查端口 5000..."
-            if nc -z localhost 5000; then
+            if timeout 1 bash -c 'echo > /dev/tcp/localhost/5000' 2>/dev/null; then
               echo "✅ 端口已开启"
               break
             fi
             sleep 1
           done
 
-          if ! nc -z localhost 5000; then
+          if ! timeout 1 bash -c 'echo > /dev/tcp/localhost/5000' 2>/dev/null; then
             echo "❌ 服务启动失败，输出日志如下："
             cat server.log
             exit 1
