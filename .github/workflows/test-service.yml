@@ -13,7 +13,7 @@ jobs:
       # 启动服务（后台运行）
       - name: 启动 HTTP 服务
         run: |
-          python app.py &
+          python app1.py &
           sleep 4
 
       # 测试访问
