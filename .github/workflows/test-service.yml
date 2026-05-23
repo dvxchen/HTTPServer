@@ -5,37 +5,45 @@ jobs:
   run-service:
     runs-on: ubuntu-latest
     steps:
-      - name: 下载代码
-        uses: actions/checkout@v4
-
-      - name: 安装 Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: 安装依赖
         run: pip install flask
 
-      - name: 下载 wait-for-it 脚本（用于等待端口）
-        run: |
-          wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh
-          chmod +x wait-for-it.sh
+      - name: 安装调试工具
+        run: sudo apt update && sudo apt install -y netcat
 
-      - name: 后台启动 Flask 服务
+      - name: 后台启动 Flask 服务（带日志）
         run: |
-          python web_chat.py &
-          echo $! > server.pid  # 记录进程ID，方便后续清理
+          python web_chat.py > server.log 2>&1 &
+          echo $! > server.pid
+          echo "服务进程ID: $(cat server.pid)"
 
-      - name: 等待服务启动（最多等待30秒）
+      - name: 循环等待端口开启（最多30秒）
         run: |
-          ./wait-for-it.sh localhost:5000 --timeout=30 --strict -- echo "✅ 服务已就绪"
+          for i in {1..30}; do
+            echo "第 $i 次检查端口 5000..."
+            if nc -z localhost 5000; then
+              echo "✅ 端口已开启"
+              break
+            fi
+            sleep 1
+          done
 
-      - name: 访问服务（测试是否正常运行）
+          if ! nc -z localhost 5000; then
+            echo "❌ 服务启动失败，输出日志如下："
+            cat server.log
+            exit 1
+          fi
+
+      - name: 访问服务
         run: |
-          curl -v --connect-timeout 10 http://localhost:5000
-          echo -e "\n✅ 服务访问成功！"
+          curl -v http://localhost:5000
 
-      - name: 清理后台进程
+      - name: 清理进程
         if: always()
         run: |
           if [ -f server.pid ]; then
