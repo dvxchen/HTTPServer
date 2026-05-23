@@ -22,6 +22,9 @@ jobs:
           curl --connect-timeout 10 http://localhost:5000
           echo -e "\n✅ 访问成功！服务正常运行"
 
+      - name: Run test.js
+        run: node test.js 
+        
       # 测试 AI 接口
       - name: 测试 AI 应答接口
         run: |
