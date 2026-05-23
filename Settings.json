@@ -1,0 +1,7 @@
+{
+    "SHOW_LOG": "failed",
+    "SHOW_LOG_ALL": "all,simple,failed",
+    "EMAIL_TO": "dvxchen@qq.com",
+    "Enabled": true,
+    "HEADLESS": true
+}

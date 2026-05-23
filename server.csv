@@ -1,0 +1,6 @@
+Action,Data,Expected Result
+Launch Chrome and navigate to http://127.0.0.1:5000/ ; maximize the browser window.,,
+Enter 'Hello World' in the 输入消息框
+Click 发送
+wait 5 seconds,,
+读取第一个class为.msg ai元素的内容·
