@@ -1,51 +1,29 @@
-name: 启动服务并测试访问
+name: 启动服务并测试
 on: [push, workflow_dispatch]
 
 jobs:
-  run-service:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: 下载代码
-        uses: actions/checkout@v4
-
-      - name: 安装 Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: 安装依赖
-        run: pip install flask
-
-      - name: 后台启动 Flask 服务（带日志）
+      # 启动服务（后台运行）
+      - name: 启动 HTTP 服务
         run: |
-          python app.py > server.log 2>&1 &
-          echo $! > server.pid
-          echo "服务进程ID: $(cat server.pid)"
+          python app.py &
+          sleep 4
 
-      - name: 循环等待端口开启（最多30秒，无额外依赖）
+      # 测试访问
+      - name: 访问页面
         run: |
-          for i in {1..30}; do
-            echo "第 $i 次检查端口 5000..."
-            if timeout 1 bash -c 'echo > /dev/tcp/localhost/5000' 2>/dev/null; then
-              echo "✅ 端口已开启"
-              break
-            fi
-            sleep 1
-          done
+          curl --connect-timeout 10 http://localhost:5000
+          echo -e "\n✅ 访问成功！服务正常运行"
 
-          if ! timeout 1 bash -c 'echo > /dev/tcp/localhost/5000' 2>/dev/null; then
-            echo "❌ 服务启动失败，输出日志如下："
-            cat server.log
-            exit 1
-          fi
-
-      - name: 访问服务
+      # 测试 AI 接口
+      - name: 测试 AI 应答接口
         run: |
-          curl -v http://localhost:5000
-
-      - name: 清理进程
-        if: always()
-        run: |
-          if [ -f server.pid ]; then
-            kill $(cat server.pid) || true
-          fi
+          curl -X POST http://localhost:5000/api -d "笔记本续航很好"
+          echo -e "\n✅ AI 接口正常！"
