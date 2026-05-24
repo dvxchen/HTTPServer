@@ -1,0 +1,38 @@
+name: 启动 AI 服务 + 公网访问
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 启动 app.py 服务（后台运行）
+        run: |
+          python web_chat.py &
+          sleep 3
+
+      - name: 安装 Cloudflare Tunnel
+        run: |
+          curl -L --output cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+
+      - name: 启动隧道 → 生成公网地址
+        run: |
+          ./cloudflared tunnel --url http://localhost:5000 > cf.log 2>&1 &
+          sleep 6
+
+      - name: 显示公网链接
+        run: |
+          echo "====================================="
+          echo "✅ 你的公网访问地址："
+          grep -o "https://.*trycloudflare.com" cf.log
+          echo "====================================="
