@@ -36,3 +36,6 @@ jobs:
           echo "✅ 你的公网访问地址："
           grep -o "https://.*trycloudflare.com" cf.log
           echo "====================================="
+          
+      - name: Run test.js
+        run: node test.js 
